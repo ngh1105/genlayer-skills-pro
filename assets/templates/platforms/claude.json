@@ -1,0 +1,7 @@
+{
+  "platform": "claude",
+  "displayName": "Claude Code",
+  "installMode": "folder",
+  "skillsFolder": ".claude/skills/genlayer-skills",
+  "detectFolders": [".claude"]
+}

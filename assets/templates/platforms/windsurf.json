@@ -1,0 +1,7 @@
+{
+  "platform": "windsurf",
+  "displayName": "Windsurf IDE",
+  "installMode": "folder",
+  "skillsFolder": ".windsurf/rules/genlayer-skills",
+  "detectFolders": [".windsurf"]
+}

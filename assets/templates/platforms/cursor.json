@@ -1,0 +1,7 @@
+{
+  "platform": "cursor",
+  "displayName": "Cursor IDE",
+  "installMode": "folder",
+  "skillsFolder": ".cursor/rules/genlayer-skills",
+  "detectFolders": [".cursor"]
+}

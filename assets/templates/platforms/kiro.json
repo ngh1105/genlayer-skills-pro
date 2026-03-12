@@ -1,0 +1,7 @@
+{
+  "platform": "kiro",
+  "displayName": "Kiro IDE",
+  "installMode": "folder",
+  "skillsFolder": ".kiro/steering/genlayer-skills",
+  "detectFolders": [".kiro"]
+}

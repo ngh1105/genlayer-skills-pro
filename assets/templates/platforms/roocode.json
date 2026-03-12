@@ -1,0 +1,7 @@
+{
+  "platform": "roocode",
+  "displayName": "Roo Code",
+  "installMode": "folder",
+  "skillsFolder": ".roo/rules/genlayer-skills",
+  "detectFolders": [".roo"]
+}

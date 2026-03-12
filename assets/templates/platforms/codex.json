@@ -1,0 +1,7 @@
+{
+  "platform": "codex",
+  "displayName": "Codex CLI",
+  "installMode": "file",
+  "filePath": "AGENTS.md",
+  "detectFolders": ["AGENTS.md"]
+}

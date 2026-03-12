@@ -1,0 +1,7 @@
+{
+  "platform": "copilot",
+  "displayName": "GitHub Copilot",
+  "installMode": "file",
+  "filePath": ".github/copilot-instructions.md",
+  "detectFolders": [".github"]
+}

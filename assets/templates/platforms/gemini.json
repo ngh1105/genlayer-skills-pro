@@ -1,0 +1,7 @@
+{
+  "platform": "gemini",
+  "displayName": "Gemini CLI",
+  "installMode": "folder",
+  "skillsFolder": ".gemini/skills/genlayer-skills",
+  "detectFolders": [".gemini"]
+}

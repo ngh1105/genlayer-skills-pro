@@ -1,0 +1,7 @@
+{
+  "platform": "antigravity",
+  "displayName": "Antigravity",
+  "installMode": "folder",
+  "skillsFolder": ".agent/skills/genlayer-skills",
+  "detectFolders": [".agent"]
+}

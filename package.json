@@ -1,0 +1,48 @@
+{
+  "name": "genlayer-skills-pro",
+  "version": "1.0.1",
+  "description": "CLI to install GenLayer skills for AI coding assistants (Claude, Cursor, Windsurf, Antigravity, Copilot, and more)",
+  "type": "module",
+  "bin": {
+    "glskills": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "assets",
+    "write-contract",
+    "genvm-lint",
+    "direct-tests",
+    "integration-tests",
+    "commit"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "npx tsx src/index.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "genlayer",
+    "skills",
+    "claude",
+    "cursor",
+    "windsurf",
+    "antigravity",
+    "copilot",
+    "ai",
+    "skill",
+    "cli"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "ora": "^8.1.1",
+    "prompts": "^2.4.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/prompts": "^2.4.9",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
