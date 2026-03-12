@@ -1,6 +1,6 @@
 {
   "name": "genlayer-skills-pro",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI to install GenLayer skills for AI coding assistants (Claude, Cursor, Windsurf, Antigravity, Copilot, and more)",
   "type": "module",
   "bin": {
