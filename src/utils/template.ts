@@ -7,6 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // After tsc: dist/utils/template.js → ../../
 const ROOT_DIR = join(__dirname, '..', '..');
 const ASSETS_DIR = join(ROOT_DIR, 'assets');
+const GENLAYER_MARKER = '<!-- genlayer-skills -->';
 
 const SKILLS = ['write-contract', 'genvm-lint', 'direct-tests', 'integration-tests', 'commit'];
 
@@ -38,6 +39,71 @@ async function loadPlatformConfig(aiType: Exclude<AIType, 'all'>): Promise<Platf
   return JSON.parse(content) as PlatformConfig;
 }
 
+export type InstallPreviewAction = 'create' | 'merge' | 'append' | 'overwrite' | 'skip';
+
+export interface InstallPreview {
+  path: string;
+  action: InstallPreviewAction;
+}
+
+/**
+ * Preview what would be installed for a single AI platform.
+ */
+export async function previewInstallForPlatform(
+  aiType: Exclude<AIType, 'all'>,
+  targetDir: string,
+  force = false
+): Promise<InstallPreview[]> {
+  const config = await loadPlatformConfig(aiType);
+
+  if (config.installMode === 'folder' && config.skillsFolder) {
+    const destDir = join(targetDir, config.skillsFolder);
+    const destExists = await exists(destDir);
+    return [{
+      path: config.skillsFolder,
+      action: force ? (destExists ? 'overwrite' : 'create') : (destExists ? 'merge' : 'create'),
+    }];
+  }
+
+  if (config.installMode === 'file' && config.filePath) {
+    const destFile = join(targetDir, config.filePath);
+    const destExists = await exists(destFile);
+
+    if (!destExists) {
+      return [{ path: config.filePath, action: 'create' }];
+    }
+
+    if (force) {
+      return [{ path: config.filePath, action: 'overwrite' }];
+    }
+
+    const existing = await readFile(destFile, 'utf-8');
+    return [{
+      path: config.filePath,
+      action: existing.includes(GENLAYER_MARKER) ? 'skip' : 'append',
+    }];
+  }
+
+  return [];
+}
+
+/**
+ * Preview what would be installed for all supported platforms.
+ */
+export async function previewInstallForAll(
+  targetDir: string,
+  force = false
+): Promise<Map<string, InstallPreview[]>> {
+  const results = new Map<string, InstallPreview[]>();
+
+  for (const aiType of Object.keys(AI_TO_PLATFORM) as Exclude<AIType, 'all'>[]) {
+    const preview = await previewInstallForPlatform(aiType, targetDir, force);
+    results.set(aiType, preview);
+  }
+
+  return results;
+}
+
 /**
  * Install skills for a single AI platform.
  * Returns list of paths written.
@@ -53,21 +119,17 @@ export async function installForPlatform(
   if (config.installMode === 'folder' && config.skillsFolder) {
     const destDir = join(targetDir, config.skillsFolder);
 
-    if (!force && await exists(destDir)) {
-      // Merge: copy only missing files
-    }
-
     await mkdir(destDir, { recursive: true });
-    
+
     // Copy each skill folder individually from root
     for (const skill of SKILLS) {
-        const skillSrc = join(ROOT_DIR, skill);
-        const skillDest = join(destDir, skill);
-        if (await exists(skillSrc)) {
-            await cp(skillSrc, skillDest, { recursive: true });
-        }
+      const skillSrc = join(ROOT_DIR, skill);
+      const skillDest = join(destDir, skill);
+      if (await exists(skillSrc)) {
+        await cp(skillSrc, skillDest, { recursive: true, force });
+      }
     }
-    
+
     written.push(config.skillsFolder);
   } else if (config.installMode === 'file' && config.filePath) {
     // For single-file installs (e.g. copilot AGENTS.md)
@@ -81,7 +143,7 @@ export async function installForPlatform(
     if (!force && await exists(destFile)) {
       // Append to existing file
       const existing = await readFile(destFile, 'utf-8');
-      if (!existing.includes('<!-- genlayer-skills -->')) {
+      if (!existing.includes(GENLAYER_MARKER)) {
         await writeFile(destFile, existing + '\n\n' + skillContent, 'utf-8');
       }
     } else {
@@ -114,7 +176,7 @@ export async function installForAll(targetDir: string, force = false): Promise<M
 async function buildAggregatedSkillFile(skillsDir: string, platform: string): Promise<string> {
   const SKILLS = ['write-contract', 'genvm-lint', 'direct-tests', 'integration-tests', 'commit'];
   const sections: string[] = [
-    `<!-- genlayer-skills -->`,
+    GENLAYER_MARKER,
     `# GenLayer Skills\n`,
     `> Installed by glskills-cli for ${platform}\n`,
   ];

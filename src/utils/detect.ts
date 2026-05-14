@@ -7,7 +7,7 @@ const DETECTION_MAP: Array<{ folders: string[]; aiType: AIType }> = [
   { folders: ['.cursor'], aiType: 'cursor' },
   { folders: ['.windsurf'], aiType: 'windsurf' },
   { folders: ['.agent'], aiType: 'antigravity' },
-  { folders: ['.github/copilot-instructions.md', '.github'], aiType: 'copilot' },
+  { folders: ['.github/copilot-instructions.md'], aiType: 'copilot' },
   { folders: ['.kiro'], aiType: 'kiro' },
   { folders: ['AGENTS.md'], aiType: 'codex' },
   { folders: ['.roo'], aiType: 'roocode' },

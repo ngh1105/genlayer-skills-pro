@@ -3,7 +3,13 @@ import prompts from 'prompts';
 import type { AIType } from '../types/index.js';
 import { AI_TYPES, AI_DISPLAY_NAMES } from '../types/index.js';
 import { detectAITypes, getAIDescription } from '../utils/detect.js';
-import { installForPlatform, installForAll } from '../utils/template.js';
+import {
+  installForPlatform,
+  installForAll,
+  previewInstallForPlatform,
+  previewInstallForAll,
+  type InstallPreviewAction,
+} from '../utils/template.js';
 import { logger } from '../utils/logger.js';
 
 interface InitOptions {
@@ -13,8 +19,19 @@ interface InitOptions {
   dryRun?: boolean;
 }
 
+function describePreviewAction(action: InstallPreviewAction): string {
+  const labels: Record<InstallPreviewAction, string> = {
+    create: 'would create',
+    merge: 'would merge missing files',
+    append: 'would append',
+    overwrite: 'would overwrite',
+    skip: 'already installed (skip)',
+  };
+  return labels[action];
+}
+
 export async function initCommand(options: InitOptions): Promise<void> {
-  logger.title('GenLayer Skills — Installer');
+  logger.title('GenLayer Skills - Installer');
 
   const cwd = process.cwd();
   let aiType = options.ai;
@@ -50,7 +67,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
   logger.info(`Installing for: ${chalk.cyan(AI_DISPLAY_NAMES[aiType])}`);
 
   if (options.dryRun) {
-    logger.warn('Dry run mode — no files will be written.');
+    logger.warn('Dry run mode - no files will be written.');
     logger.blank();
   }
 
@@ -60,7 +77,30 @@ export async function initCommand(options: InitOptions): Promise<void> {
     let writtenPaths: string[] = [];
 
     if (options.dryRun) {
-      spinner.succeed('Dry run complete — no files written.');
+      if (aiType === 'all') {
+        const previews = await previewInstallForAll(cwd, options.force ?? false);
+        spinner.succeed('Dry run complete - no files written.');
+        logger.blank();
+        for (const [ai, items] of previews.entries()) {
+          if (items.length > 0) {
+            logger.success(`${AI_DISPLAY_NAMES[ai as AIType]}`);
+            for (const item of items) {
+              logger.file(`${item.path} (${describePreviewAction(item.action)})`);
+            }
+          }
+        }
+      } else {
+        const previews = await previewInstallForPlatform(
+          aiType as Exclude<AIType, 'all'>,
+          cwd,
+          options.force ?? false
+        );
+        spinner.succeed('Dry run complete - no files written.');
+        logger.blank();
+        for (const item of previews) {
+          logger.file(`${item.path} (${describePreviewAction(item.action)})`);
+        }
+      }
       logger.blank();
       return;
     }
