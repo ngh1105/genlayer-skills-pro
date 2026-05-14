@@ -99,7 +99,7 @@ def fetch_price(self, token: str) -> None:
         task=f"Fetch the USD price for {token} and extract only the numeric value.",
         criteria="The result must be a valid USD price number.",
     )
-    self.price = Price(token=token, usd=float(price_str))
+    self.price = {"token": token, "usd": price_str}
 ```
 
 ## Equivalence Principle
@@ -126,8 +126,7 @@ def fetch_exchange_rate() -> str:
 
 gl.eq_principle.prompt_comparative(
     fetch_exchange_rate,
-    principle="The numeric exchange rate must match within the accepted tolerance.",
-    tolerance=0.1,
+    principle="The numeric exchange rate must match the leader's result.",
 )
 ```
 
