@@ -23,7 +23,7 @@ class MyContract(gl.Contract):
     # Constructor — runs once at deploy time
     def __init__(self, initial_value: str) -> None:
         self.field_name = initial_value
-        self.owner = gl.message.sender_account
+        self.owner = gl.message.sender_address
 
     # Read-only method — free to call, no state change
     @gl.public.view
@@ -65,16 +65,16 @@ For methods requiring AI reasoning:
 ```python
 @gl.public.write
 def analyze_sentiment(self, text: str) -> None:
-    # Call LLM — non-deterministic, runs on all validators
-    result = gl.nondet.exec_prompt(f"""
-        Analyze the sentiment of this text: "{text}"
-        Respond with only: positive, negative, or neutral
-    """)
+    def classify_sentiment() -> str:
+        return gl.nondet.exec_prompt(f"""
+            Analyze the sentiment of this text: "{text}"
+            Respond with only: positive, negative, or neutral
+        """)
 
-    # Use equivalence principle for consensus
     final = gl.eq_principle.prompt_non_comparative(
-        result,
-        "Is the sentiment label one of: positive, negative, neutral?",
+        classify_sentiment,
+        task="Classify the text sentiment as positive, negative, or neutral.",
+        criteria="The result must be exactly one of: positive, negative, neutral.",
     )
     self.last_sentiment = final
 ```
@@ -86,20 +86,18 @@ Fetch real-time data from the internet:
 ```python
 @gl.public.write
 def fetch_price(self, token: str) -> None:
-    # Fetch web data — non-deterministic
-    response = gl.nondet.web.get(
-        f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
-    )
+    def fetch_and_extract_price() -> str:
+        response = gl.nondet.web.get(
+            f"https://api.coingecko.com/api/v3/simple/price?ids={token}&vs_currencies=usd"
+        )
+        return gl.nondet.exec_prompt(
+            f"Extract the USD price of {token} from this JSON: {response.text}. Return only the number."
+        )
 
-    # Extract with LLM
-    price_str = gl.nondet.exec_prompt(
-        f"Extract the USD price of {token} from this JSON: {response.text}. Return only the number."
-    )
-
-    # Reach consensus with tolerance
-    gl.eq_principle.prompt_non_comparative(
-        price_str,
-        "Is this a valid USD price number?",
+    price_str = gl.eq_principle.prompt_non_comparative(
+        fetch_and_extract_price,
+        task=f"Fetch the USD price for {token} and extract only the numeric value.",
+        criteria="The result must be a valid USD price number.",
     )
     self.price = Price(token=token, usd=float(price_str))
 ```
@@ -110,25 +108,35 @@ The equivalence principle allows validators to reach consensus on non-determinis
 
 ```python
 # Non-comparative: each validator independently checks its own result
+def generate_summary() -> str:
+    return gl.nondet.exec_prompt("Summarize the current market news in one sentence.")
+
 gl.eq_principle.prompt_non_comparative(
-    result,                              # The non-deterministic result
-    "Is this a valid sentiment label?",  # Validation criteria
+    generate_summary,
+    task="Summarize the current market news in one sentence.",
+    criteria="The summary must be concise and must not include unsupported claims.",
 )
 
 # Comparative: validators compare their results against the leader's
+def fetch_exchange_rate() -> str:
+    response = gl.nondet.web.get("https://api.example.com/rate")
+    return gl.nondet.exec_prompt(
+        f"Extract the exchange rate from this response: {response.text}. Return only the number."
+    )
+
 gl.eq_principle.prompt_comparative(
-    result,
-    "Do these two results convey the same meaning?",
-    tolerance=0.1,                       # 10% tolerance for numeric values
+    fetch_exchange_rate,
+    principle="The numeric exchange rate must match within the accepted tolerance.",
+    tolerance=0.1,
 )
 ```
 
 ## Message Context
 
 ```python
-gl.message.sender_account   # Address of the caller
+gl.message.sender_address   # Address of the immediate caller
 gl.message.value            # Native token sent with transaction
-gl.message.contract_account # This contract's address
+gl.message.contract_address # This contract's address
 ```
 
 ## Access Control Pattern
@@ -136,7 +144,7 @@ gl.message.contract_account # This contract's address
 ```python
 @gl.public.write
 def admin_only_action(self) -> None:
-    if gl.message.sender_account != self.owner:
+    if gl.message.sender_address != self.owner:
         raise Exception("Only owner can call this")
     # ... proceed
 ```
@@ -152,7 +160,7 @@ class SimpleStorage(gl.Contract):
 
     def __init__(self, initial: str) -> None:
         self.stored_value = initial
-        self.owner = gl.message.sender_account
+        self.owner = gl.message.sender_address
 
     @gl.public.view
     def get(self) -> str:
@@ -160,7 +168,7 @@ class SimpleStorage(gl.Contract):
 
     @gl.public.write
     def set(self, value: str) -> None:
-        if gl.message.sender_account != self.owner:
+        if gl.message.sender_address != self.owner:
             raise Exception("Not authorized")
         self.stored_value = value
 ```
@@ -176,6 +184,37 @@ class SimpleStorage(gl.Contract):
 | `float` in storage | `u256` or string representation |
 | Bare `int` in storage | `u256`, `i256`, etc. |
 | LLM call without eq_principle | Always wrap with equivalence principle |
+
+## Lint-Clean Demo Contract
+
+Use this minimal contract to verify the installed authoring workflow produces a lint-clean contract:
+
+```python
+# { "Depends": "py-genlayer:test" }
+from genlayer import *
+
+class Notes(gl.Contract):
+    notes: TreeMap[Address, str]
+
+    def __init__(self) -> None:
+        self.notes = TreeMap()
+
+    @gl.public.write
+    def set_note(self, note: str) -> None:
+        self.notes[gl.message.sender_address] = note
+
+    @gl.public.view
+    def get_note(self, owner: Address) -> str:
+        return self.notes.get(owner, "")
+```
+
+Save it as `contracts/notes.py`, then run:
+
+```bash
+genvm-lint check contracts/notes.py
+```
+
+Expected result: the command completes without lint errors.
 
 ## Workflow
 
