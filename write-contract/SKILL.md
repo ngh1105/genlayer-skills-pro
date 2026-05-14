@@ -62,6 +62,12 @@ Use GenLayer SDK types, **not** bare Python types, for storage fields:
 
 For methods requiring AI reasoning:
 
+Example storage field:
+
+```python
+last_sentiment: str
+```
+
 ```python
 @gl.public.write
 def analyze_sentiment(self, text: str) -> None:
@@ -83,6 +89,12 @@ def analyze_sentiment(self, text: str) -> None:
 
 Fetch real-time data from the internet:
 
+Example storage field:
+
+```python
+prices: TreeMap[str, str]
+```
+
 ```python
 @gl.public.write
 def fetch_price(self, token: str) -> None:
@@ -99,7 +111,7 @@ def fetch_price(self, token: str) -> None:
         task=f"Fetch the USD price for {token} and extract only the numeric value.",
         criteria="The result must be a valid USD price number.",
     )
-    self.price = {"token": token, "usd": price_str}
+    self.prices[token] = price_str
 ```
 
 ## Equivalence Principle

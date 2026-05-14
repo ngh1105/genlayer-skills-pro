@@ -51,7 +51,7 @@ def test_full_flow():
     assert tx_execution_succeeded(tx_receipt)
 
     # Read methods — call directly, no transaction
-    result = contract.get_data(args=[contract.address]).call()
+    result = contract.get_data(args=[]).call()
     assert result == "hello"
 ```
 
@@ -140,8 +140,14 @@ tests/
 ## Common Issues
 
 ### "Transaction not found" errors
+Clear the local gltest cache for your shell:
+
 ```bash
 rm -rf .gltest_cache
+```
+
+```powershell
+Remove-Item -Recurse -Force .gltest_cache
 ```
 
 ### Test timing out
